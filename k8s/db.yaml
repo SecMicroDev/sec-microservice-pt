@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-spt-dev
+  namespace: tcc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-container-spt-dev
+  template:
+    metadata:
+      labels:
+        app: postgres-container-spt-dev
+        tier: backend
+    spec:
+      containers:
+        - name: postgres-container-spt-dev
+          image: postgres:16-alpine
+          envFrom:
+            - secretRef:
+                name: pg-micro-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-volume-mount-spt
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - "-c"
+                - |
+                  pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+            initialDelaySeconds: 15
+            timeoutSeconds: 20
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - "-c"
+                - |
+                  pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+            initialDelaySeconds: 45
+            timeoutSeconds: 20
+
+      volumes:
+        - name: postgres-volume-mount-spt
+          persistentVolumeClaim:
+            claimName: postgres-pvc-spt-dev
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: postgres-service-spt-dev
+  namespace: tcc
+spec:
+  clusterIP: 10.96.254.21
+  type: ClusterIP
+  selector:
+    app: postgres-container-spt-dev
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

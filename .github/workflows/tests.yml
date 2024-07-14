@@ -1,0 +1,78 @@
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  test_with_container:
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
+        fetch-depth: 0  # a full history is required for pull request analysis
+
+    - name: Build test container
+      run: |
+        docker compose up -d --build postgres-test api-test && docker compose wait api-test
+
+    - run: echo "Tests returned exit code $? (Passed)"
+    - name: Ending container
+      run: docker compose down
+
+    - name: codacy-coverage-reporter
+      uses: codacy/codacy-coverage-reporter-action@v1
+      if: github.event.pull_request.merged == false
+      with:
+        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        # or
+        # api-token: ${{ secrets.CODACY_API_TOKEN }}
+        coverage-reports: .coverage/coverage.xml 
+        # or a comma-separated list for multiple reports
+        # coverage-reports: <PATH_TO_REPORT>, <PATH_TO_REPORT>
+    - name: Run Codacy Analysis CLI
+      uses: codacy/codacy-analysis-cli-action@master
+      if: github.event.pull_request.merged == false
+      with:
+        output: results.sarif
+        format: sarif
+        # Adjust severity of non-security issues
+        gh-code-scanning-compat: true
+        # Force 0 exit code to allow SARIF file generation
+        # This will hand over control about PR rejection to the GitHub side
+        max-allowed-issues: 2147483647
+      
+    # Upload the SARIF file generated in the previous step
+    - name: Upload SARIF results file
+      uses: github/codeql-action/upload-sarif@main
+      if: github.event.pull_request.merged == false
+      with:
+        sarif_file: results.sarif
+
+    # - name: Copying source code files
+    #   run: |
+    #     sudo mkdir -p PYTHON/py
+    #     sudo cp -r backend/ PYTHON/py/
+
+    # - run: |
+    #     echo "PYTHON/py folder"
+    #     ls ./PYTHON/py
+    # - name: Archive coverage data
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #     name: py-coverage-data
+    #     path: ./PYTHON/py/.qodana/code-coverage
+
+    # - name: Use Qodana
+    #   uses: JetBrains/qodana-action@v2023.3
+    #   env:
+    #     QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }} # read the steps about it below
+    #   with:
+    #     args: "-i,PYTHON/py,--linter,jetbrains/qodana-python-community:2023.3,-u,root"
+    #     pr-mode: false
+    #     

@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ptservice-dev
+  namespace: tcc
+spec:
+  selector:
+    matchLabels:
+      app: ptservice-dev
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ptservice-dev
+    spec:
+      initContainers:
+      - name: init-postgres
+        image: busybox
+        command:
+          - 'sh'
+          - '-c'
+          - |
+            until nslookup postgres-service-rh-dev.tcc.svc.cluster.local; do \
+            echo waiting for Postgres; sleep 2; \
+            done
+        env:
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: tcc-micro-secret
+              key: PT_DB_HOST
+      containers:
+      - name: sec-microservice-pt
+        image: swamptg/sec-microservice-pt:latest
+        imagePullPolicy: Always
+        command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--reload"]
+        env:
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: tcc-micro-secret
+              key: PT_DB_NAME
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: tcc-micro-secret
+              key: PT_DB_USER
+        - name: DB_HOST
+          value: '10.96.254.21' 
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: tcc-micro-secret
+              key: PT_DB_PASSWORD
+        - name: API_ENV 
+          value: dev
+        ports:
+        - name: http-rh
+          containerPort: 80
+        resources:
+          requests:
+            cpu: '150m'
+            memory: '50Mi'
+          limits:
+            cpu: '300m'
+            memory: '200Mi'
+        livenessProbe:
+          initialDelaySeconds: 1
+          periodSeconds: 2
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 1
+          httpGet:
+            host:
+            scheme: HTTP
+            path: /check
+            httpHeaders:
+              - name: Host
+                value: localhost
+            port: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: tcc
+  name: ptservice-dev
+  labels:
+    app: ptservice-dev
+spec:
+  type: ClusterIP
+  selector:
+    app: ptservice-dev
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8050

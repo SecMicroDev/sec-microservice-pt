@@ -1,0 +1,15 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-pvc-spt-dev
+  namespace: tcc
+  labels:
+    type: local
+    app: tcc-apps
+spec:
+  storageClassName: standard
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

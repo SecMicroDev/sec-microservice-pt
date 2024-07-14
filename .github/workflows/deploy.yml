@@ -1,0 +1,83 @@
+name: Deploy to Dockerhub
+on:
+  push:
+    branches:
+    - main
+    - 'release/*'
+    - develop
+  pull_request:
+    types: [opened, synchronize]
+
+
+env:
+  # Hostname of your registry
+  REGISTRY: docker.io
+  # Image repository, without hostname and tag
+  IMAGE_NAME: swamptg/sec-microservice-pt
+  SHA: ${{ github.event.pull_request.head.sha || github.event.after }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.SHA }}
+
+    - name: Setup Docker buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver: docker-container
+        # driver-opts: |
+        #   image=moby/buildkit:v0.10.6
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+      # if: github.event.pull_request.merged == true
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      # if: github.event.pull_request.merged == true
+      uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        labels: |
+          org.opencontainers.image.revision=${{ env.SHA }}        
+        tags: |
+          type=edge,branch=$repo.default_branch
+          type=semver,pattern=v{{version}}
+          type=sha,prefix=,suffix=,format=short
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      # if: github.event.pull_request.merged == true
+      with:
+        context: .
+        push: ${{ github.event_name != 'pull_request' }}
+        load: ${{ github.event_name == 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}${{ github.event_name != 'pull_request' && format(',{0}:latest',env.IMAGE_NAME) || '' }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Docker Scout
+      id: docker-scout
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: docker/scout-action@v1
+      with:
+        command: cves,recommendations
+        image: ${{ steps.meta.outputs.tags }}
+        # image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        only-severities: critical,high
+        github-token: ${{ secrets.SCOUT_TOKEN }}
+        exit-code: false
+
