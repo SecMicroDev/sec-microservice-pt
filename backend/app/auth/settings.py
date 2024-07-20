@@ -1,6 +1,5 @@
 """ Variables defined by the environment for JWT"""
 
-import base64
 import os
 
 

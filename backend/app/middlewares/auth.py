@@ -1,7 +1,9 @@
+"""Authentication and authorization middleware for FastAPI application."""
+
 from typing import Annotated, Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
+from jwt import PyJWTError
 from app.auth.jwt_utils import JWTValidationError, decode_jwt_token
 from app.models.user import UserRead
 from app.models.scope import DefaultScope
@@ -32,17 +34,19 @@ def authenticate_user(token: Annotated[str, Depends(oauth2_scheme)]) -> UserRead
     try:
         payload = decode_jwt_token(token)
 
-        if payload is None or "sub" not in payload:
+        if payload is None or payload.get("sub") is None:
             raise credentials_exception
 
         user: dict[str, Any] = payload.get("sub", {})
-        if user is None:
+
+        if user is None or len(user) <= 0:
             raise credentials_exception
+
         print(user)
         token_data = UserRead(**user)
 
         return token_data
-    except JWTError as ex:
+    except PyJWTError as ex:
         raise credentials_exception from ex
     except JWTValidationError as ex:
         raise credentials_exception from ex
@@ -50,7 +54,7 @@ def authenticate_user(token: Annotated[str, Depends(oauth2_scheme)]) -> UserRead
 
 def authorize_user(
     user: UserRead = Depends(authenticate_user),
-    operation_scopes: list[str] = ["All"],
+    operation_scopes: list[str] | None = None,
     operation_hierarchy_order: int = 1,
     custom_checks: bool | None = None,
 ) -> UserRead:
@@ -66,6 +70,8 @@ def authorize_user(
         HTTPException: If the user does not have permission to access the resource.
 
     """
+    if operation_scopes is None:
+        operation_scopes = [DefaultScope.ALL.value]
 
     print("Hierarchies: ", user.role.hierarchy)
     print("Scopes: ", user.scope.name)
@@ -82,7 +88,6 @@ def authorize_user(
         and user.scope.name not in operation_scopes
     ):
 
-        print("Raising exception...")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User does not have permission to access this resource",

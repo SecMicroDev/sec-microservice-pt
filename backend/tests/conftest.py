@@ -1,19 +1,21 @@
 from typing import Any
+
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
+from fastapi.testclient import TestClient
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session
-from app.main import app
+
 from app.db.conn import get_db
+from app.main import app
+from app.middlewares.auth import authenticate_user
 from app.middlewares.send_message import get_async_message_sender_on_loop
+from app.models.enterprise import Enterprise, EnterpriseRelation
 from app.models.role import DefaultRole, DefaultRoleSchema, Role, RoleRelation
 from app.models.scope import DefaultScope, DefaultScopeSchema, Scope, ScopeRelation
-from app.models.enterprise import Enterprise, EnterpriseRelation
-from app.middlewares.auth import authenticate_user
 from app.models.user import User, UserRead
 
 # SQLite database URL for testing
@@ -34,12 +36,16 @@ SQLModel.metadata.create_all(bind=engine)
 
 
 @asynccontextmanager
-async def override_lifespan(app: FastAPI, *args, **kwargs):
+async def override_lifespan(fapi_app: FastAPI, *args, **kwargs):
+    # pylint: disable=unused-argument
+
     print("Span")
     yield
 
 
 async def test_sender_on_loop(message: str):
+    # pylint: disable=unused-argument
+
     pass
 
 
@@ -74,6 +80,8 @@ def get_test_client_authenticated(user: UserRead):
         yield session
 
     def override_authenticate_user(token: str = "") -> Any:
+        # pylint: disable=unused-argument
+
         user_dict = user.model_dump()
         user_dict.pop("hashed_password", "")
         return UserRead(**user_dict)
@@ -90,6 +98,7 @@ def get_test_client_authenticated(user: UserRead):
 
 @pytest.fixture(scope="function")
 def test_client(db_session: Session):
+    # pylint: disable=redefined-outer-name
     """Create a test client that uses the override_get_db fixture to return a session."""
 
     def override_get_session():
@@ -104,13 +113,16 @@ def test_client(db_session: Session):
         override_get_async_message_sender_on_loop
     )
 
-    with TestClient(app) as test_client:
-        yield test_client
+    with TestClient(app) as test_client_override:
+        yield test_client_override
 
 
 @pytest.fixture(scope="function")
 def enterprise_role_scope(db_session: Session) -> dict[str, Any]:
+    # pylint: disable=redefined-outer-name
+
     session = db_session
+
     # Create default roles and scopes
     default_roles = DefaultRoleSchema.get_default_roles()
     default_scopes = DefaultScopeSchema.get_default_scopes()
@@ -151,6 +163,8 @@ def enterprise_role_scope(db_session: Session) -> dict[str, Any]:
 
 @pytest.fixture(scope="function")
 def create_default_user(db_session: Session, enterprise_role_scope: dict[str, Any]):
+    # pylint: disable=redefined-outer-name
+
     roles: list[Role] = enterprise_role_scope["roles"]
     role = list(filter(lambda role: role.name == DefaultRole.OWNER.value, roles))[0]
 
@@ -162,7 +176,6 @@ def create_default_user(db_session: Session, enterprise_role_scope: dict[str, An
         username="testuser",
         email="test@example.com",
         full_name="Test User",
-        hashed_password="somehashedpassword",
         role_id=role.id,
         scope_id=scope.id,
         enterprise_id=enterprise_role_scope["enterprise"].id,
@@ -179,6 +192,8 @@ def create_default_user(db_session: Session, enterprise_role_scope: dict[str, An
 def test_client_authenticated_default(
     db_session: Session, create_default_user: dict[str, Any]
 ):
+    # pylint: disable=redefined-outer-name
+
     user: User = create_default_user["user"]
     role: Role = list(
         filter(lambda role: role.id == user.role_id, create_default_user["roles"])
@@ -211,6 +226,8 @@ def test_client_authenticated_default(
         #     db_session.close()
 
     def override_authenticate_user(token: str = "") -> Any:
+        # pylint: disable=unused-argument
+
         return user_read
 
     app.dependency_overrides[get_db] = override_get_session
@@ -233,6 +250,8 @@ def test_client_authenticated_default(
 
 @pytest.fixture(scope="function")
 def test_client_auth_default_with_broker(test_client_authenticated_default: TestClient):
+    # pylint: disable=redefined-outer-name
+
     my_app = test_client_authenticated_default.app
 
     if isinstance(my_app, FastAPI):
