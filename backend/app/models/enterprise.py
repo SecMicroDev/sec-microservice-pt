@@ -57,7 +57,6 @@ class EnterpriseWithHierarchy(EnterpriseRelation):
     scopes: list["ScopeRelation"]
 
 
-
 class EnterpriseResponse(SQLModel):
     """Represents a response from the enterprise."""
 

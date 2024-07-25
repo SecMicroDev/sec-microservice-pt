@@ -113,17 +113,22 @@ class User(BaseIDModel, BaseUser, table=True):
     scope: Optional[Scope] = Relationship(back_populates="users")
     enterprise: Optional[Enterprise] = Relationship(back_populates="users")
     enterprise_id: int | None = Field(foreign_key="enterprise.id", nullable=False)
-    products: Optional[list["BaseProduct"]] =  Relationship(sa_relationship=RelationshipProperty(
-        "BaseProduct",
-        back_populates="user_created",
-        foreign_keys="[BaseProduct.created_by]"
-    ))
+    products: Optional[list["BaseProduct"]] = Relationship(
+        sa_relationship=RelationshipProperty(
+            "BaseProduct",
+            back_populates="user_created",
+            foreign_keys="[BaseProduct.created_by]",
+        )
+    )
 
-    updates: Optional[list["BaseProduct"]] = Relationship(sa_relationship=RelationshipProperty(
-        "BaseProduct",
-        back_populates="user_updated",
-        foreign_keys="[BaseProduct.last_updated_by]",
-    ))
+    updates: Optional[list["BaseProduct"]] = Relationship(
+        sa_relationship=RelationshipProperty(
+            "BaseProduct",
+            back_populates="user_updated",
+            foreign_keys="[BaseProduct.last_updated_by]",
+        )
+    )
+
     def get_all(self) -> SelectOfScalar:
         return select(User).where(User.enterprise_id == self.enterprise_id)
 
@@ -174,4 +179,3 @@ class UserResponse(APIResponse):
     """Represents a user response."""
 
     data: UserRead
-

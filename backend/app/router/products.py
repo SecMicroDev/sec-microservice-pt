@@ -1,14 +1,19 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select, Session
-from app.models.products import BaseProduct, ProductCreate, ProductUpdate, ProductResponse
+from app.models.products import (
+    BaseProduct,
+    ProductCreate,
+    ProductUpdate,
+    ProductResponse,
+)
 from app.db.conn import get_db
 from app.middlewares.auth import authenticate_user, authorize_user
 from app.models.role import DefaultRole
 from app.models.user import UserRead
 
 
-router = APIRouter(prefix='/products')
+router = APIRouter(prefix="/products")
 
 
 @router.post("/", response_model=ProductResponse)
@@ -23,7 +28,7 @@ def create_product(
         operation_scopes=["Patrimonial", "All"],
         operation_hierarchy_order=DefaultRole.get_default_hierarchy(
             DefaultRole.COLLABORATOR
-        )
+        ),
     )
 
     if current_user.enterprise_id is None:
@@ -33,7 +38,7 @@ def create_product(
         db_product = BaseProduct(
             **product.model_dump(),
             created_by=current_user.id,
-            enterprise_id=current_user.enterprise_id
+            enterprise_id=current_user.enterprise_id,
         )
         db_session.add(db_product)
         db_session.commit()
@@ -53,14 +58,14 @@ def read_product(
         operation_scopes=["Patrimonial", "All"],
         operation_hierarchy_order=DefaultRole.get_default_hierarchy(
             DefaultRole.COLLABORATOR
-        )
+        ),
     )
 
     with db_session:
         db_product = db_session.exec(
             select(BaseProduct)
-                .where(BaseProduct.id == product_id)
-                .where(BaseProduct.enterprise_id == current_user.enterprise_id)
+            .where(BaseProduct.id == product_id)
+            .where(BaseProduct.enterprise_id == current_user.enterprise_id)
         ).first()
 
         if db_product is None:
@@ -84,27 +89,23 @@ def update_product(
             DefaultRole.COLLABORATOR
         ),
         custom_checks=(
-            not any([
-                k != 'stock' \
-                    for k in product.model_dump(exclude_unset=True).keys()
-                ]) 
-            or current_user.role.hierarchy <= DefaultRole.get_default_hierarchy(
-                DefaultRole.MANAGER.value)
-        )
+            not any(
+                [k != "stock" for k in product.model_dump(exclude_unset=True).keys()]
+            )
+            or current_user.role.hierarchy
+            <= DefaultRole.get_default_hierarchy(DefaultRole.MANAGER.value)
+        ),
     )
 
     with db_session:
         db_product = db_session.exec(
             select(BaseProduct)
-                .where(BaseProduct.id == product_id)
-                .where(BaseProduct.enterprise_id == current_user.enterprise_id)
+            .where(BaseProduct.id == product_id)
+            .where(BaseProduct.enterprise_id == current_user.enterprise_id)
         ).first()
 
         if db_product is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Product not found"
-            )
+            raise HTTPException(status_code=404, detail="Product not found")
 
         for key, value in product.model_dump(exclude_unset=True).items():
             setattr(db_product, key, value)
@@ -116,7 +117,7 @@ def update_product(
         db_session.commit()
         db_session.refresh(db_product)
 
-        print(f'Updated product: {db_product.model_dump()}')
+        print(f"Updated product: {db_product.model_dump()}")
 
         return ProductResponse(**db_product.model_dump())
 
@@ -132,14 +133,14 @@ def delete_product(
         operation_scopes=["Patrimonial", "All"],
         operation_hierarchy_order=DefaultRole.get_default_hierarchy(
             DefaultRole.MANAGER
-        )
+        ),
     )
 
     with db_session:
         db_product = db_session.exec(
             select(BaseProduct)
-                .where(BaseProduct.id == product_id)
-                .where(BaseProduct.enterprise_id == current_user.enterprise_id)
+            .where(BaseProduct.id == product_id)
+            .where(BaseProduct.enterprise_id == current_user.enterprise_id)
         ).first()
 
         if db_product is None:
@@ -149,4 +150,3 @@ def delete_product(
         db_session.commit()
 
     return {"detail": "Product deleted"}
-

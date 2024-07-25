@@ -20,11 +20,11 @@ class EnterpriseEvents(str, Enum):
 
 class BaseEventMessage(SQLModel):
     event: str
-    event_scope: str = DefaultScope.ALL.value 
+    event_scope: str = DefaultScope.ALL.value
 
 
 class BaseUserEventMessage(BaseEventMessage):
-    event_scope: str = DefaultScope.ALL.value 
+    event_scope: str = DefaultScope.ALL.value
 
 
 class UserCreateEvent(BaseUserEventMessage):

@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from app.db.conn import get_db
 from app.models.enterprise import Enterprise, EnterpriseUpdate
 from app.models.user import User, UserRead
-from app.models.role import BaseRole, Role 
+from app.models.role import BaseRole, Role
 from app.models.scope import BaseScope, DefaultScope, Scope
 
 
@@ -25,17 +25,16 @@ class UpdateEvent:
         start_date: datetime.datetime,
         origin: str,
         update_scope: str | None = None,
-        full_user: dict[str, Any] | None = None
+        full_user: dict[str, Any] | None = None,
     ):
 
-        self.event=event 
+        self.event = event
         self.event_scope = event_scope
         self.data = data
         self.start_date = start_date
         self.origin = origin
         self.update_scope = update_scope
         self.full_user = full_user
-
 
     @classmethod
     def create_from_message(cls, message: str) -> "UpdateEvent | None":
@@ -47,8 +46,13 @@ class UpdateEvent:
             print("Invalid Message: ", message)
             return None
 
-        if any(map(lambda x: x not in message_dict, ('event', 'event_scope', 'data', 'origin', 'start_date'))):
-            print('Error: RECEIVED INVALID MESSAGE')
+        if any(
+            map(
+                lambda x: x not in message_dict,
+                ("event", "event_scope", "data", "origin", "start_date"),
+            )
+        ):
+            print("Error: RECEIVED INVALID MESSAGE")
             print("Invalid Message: ", message)
             return None
 
@@ -59,46 +63,55 @@ class UpdateEvent:
             datetime.datetime.fromisoformat(message_dict["start_date"]),
             message_dict["origin"],
             update_scope=message_dict.get("update_scope", None),
-            full_user=message_dict.get("user", None)
+            full_user=message_dict.get("user", None),
         )
-
 
     @classmethod
     async def process_message(cls, message: str):
-        print('Creating message processor...')
+        print("Creating message processor...")
         print(f"Received message: {message}")
         event = cls.create_from_message(message)
         if event is not None:
-            print('Created event. Updating database...')
+            print("Created event. Updating database...")
             await event.update_table()
         else:
-            print('Error: Event is NONE')
+            print("Error: Event is NONE")
 
         stdout.flush()
 
-
     def _check_valid_user_event(self):
-        user_events = (UserEvents.USER_CREATED, UserEvents.USER_UPDATED, UserEvents.USER_DELETED)
-        enterprise_events = (EnterpriseEvents.ENTERPRISE_CREATED, EnterpriseEvents.ENTERPRISE_UPDATED, EnterpriseEvents.ENTERPRISE_DELETED)
+        user_events = (
+            UserEvents.USER_CREATED,
+            UserEvents.USER_UPDATED,
+            UserEvents.USER_DELETED,
+        )
+        enterprise_events = (
+            EnterpriseEvents.ENTERPRISE_CREATED,
+            EnterpriseEvents.ENTERPRISE_UPDATED,
+            EnterpriseEvents.ENTERPRISE_DELETED,
+        )
 
         if self.event in (user_events + enterprise_events):
-            check_update_scope = ''
-            check_update_scope =  self.update_scope if self.update_scope is not None else ''
-            check_resp = any((
-                self.event_scope == DefaultScope.PATRIMONIAL.value,
-                self.event_scope == DefaultScope.ALL.value,
-                check_update_scope == DefaultScope.PATRIMONIAL.value,
-                check_update_scope == DefaultScope.ALL.value
-            ))
+            check_update_scope = ""
+            check_update_scope = (
+                self.update_scope if self.update_scope is not None else ""
+            )
+            check_resp = any(
+                (
+                    self.event_scope == DefaultScope.PATRIMONIAL.value,
+                    self.event_scope == DefaultScope.ALL.value,
+                    check_update_scope == DefaultScope.PATRIMONIAL.value,
+                    check_update_scope == DefaultScope.ALL.value,
+                )
+            )
 
-            print(f'Valid event for PT: {check_resp}')
+            print(f"Valid event for PT: {check_resp}")
             return check_resp
 
-        print('Ignoring event for PT.')
+        print("Ignoring event for PT.")
         stdout.flush()
         return False
 
-    
     async def __db_access_loop(self, db_function_callback: Callable, retries: int = 5):
         db: Session | None = None
         err: Exception | None = None
@@ -146,7 +159,6 @@ class UpdateEvent:
 
         stdout.flush()
 
-
     async def update_table(self):
         if not self._check_valid_user_event():
             return
@@ -172,7 +184,6 @@ class UpdateEvent:
             await self.update_user()
 
         stdout.flush()
-        
 
     async def update_enterprise(self):
         def db_access(db: Session):
@@ -184,7 +195,9 @@ class UpdateEvent:
 
                     if enterprise is not None:
 
-                        for key, value in enterprise_update.model_dump(exclude_none=True).items():
+                        for key, value in enterprise_update.model_dump(
+                            exclude_none=True
+                        ).items():
                             if hasattr(enterprise, key):
                                 print(f"Setting {key} to {value}")
                                 setattr(enterprise, key, value)
@@ -198,17 +211,17 @@ class UpdateEvent:
 
                 stdout.flush()
             except Exception as e:
-                print(f'Failed to update enterprise {self.data["name"]} - ID: {self.data["id"]} on DB')
+                print(
+                    f'Failed to update enterprise {self.data["name"]} - ID: {self.data["id"]} on DB'
+                )
                 print(f"Error: {e}")
 
         await self.__db_access_loop(db_access)
 
-
-
     async def update_user(self):
         def db_access(db: Session):
 
-            name = ''
+            name = ""
             id = 0
 
             try:
@@ -217,9 +230,11 @@ class UpdateEvent:
 
                 print(f"Start User update: Data -- {self.data}")
 
-                if self.full_user is not None \
-                    and self.data.get("enterprise_id") \
-                    and self.data.get("id"):
+                if (
+                    self.full_user is not None
+                    and self.data.get("enterprise_id")
+                    and self.data.get("id")
+                ):
 
                     with db as session:
                         print("Interacting with the database...")
@@ -233,10 +248,14 @@ class UpdateEvent:
 
                             print(f"Found User {name} - ID {id}")
 
-                            if user_read.scope.name != DefaultScope.ALL.value and \
-                                    user_read.scope.name != DefaultScope.SELLS.value:
+                            if (
+                                user_read.scope.name != DefaultScope.ALL.value
+                                and user_read.scope.name != DefaultScope.SELLS.value
+                            ):
 
-                                print(f"Deleting User: {user_read.username} -- ID {user_read.id}")
+                                print(
+                                    f"Deleting User: {user_read.username} -- ID {user_read.id}"
+                                )
                                 session.delete(db_user)
                                 session.commit()
                                 return
@@ -246,7 +265,8 @@ class UpdateEvent:
                             elif "role_name" in self.data:
                                 role = session.exec(
                                     BaseRole.get_roles_by_names(
-                                        self.data["enterprise_id"], [self.data["role_name"]]
+                                        self.data["enterprise_id"],
+                                        [self.data["role_name"]],
                                     )
                                 ).first()
 
@@ -255,7 +275,8 @@ class UpdateEvent:
                                 elif "scope_name" in self.data:
                                     scope = session.exec(
                                         BaseScope.get_roles_by_names(
-                                            self.data["enterprise_id"], [self.data["scope_name"]]
+                                            self.data["enterprise_id"],
+                                            [self.data["scope_name"]],
                                         )
                                     ).first()
 
@@ -291,22 +312,22 @@ class UpdateEvent:
                             ################## VERIFYING SAVED USER ############
                             user_v = session.get(User, self.data["id"])
                             assert user_v is not None
-                            print(f'User updated: {user_v.model_dump()}')
+                            print(f"User updated: {user_v.model_dump()}")
 
                         else:
                             print(f'User with id {self.data["id"]} not found')
-                            if user_read.scope.name == DefaultScope.ALL.value or \
-                                    user_read.scope.name == DefaultScope.SELLS.value:
-                                
+                            if (
+                                user_read.scope.name == DefaultScope.ALL.value
+                                or user_read.scope.name == DefaultScope.SELLS.value
+                            ):
+
                                 session.add(User(**user_read.model_dump()))
                                 session.commit()
             except Exception as e:
-                print(f'Failed to update user {name} - ID: {id} on DB')
+                print(f"Failed to update user {name} - ID: {id} on DB")
                 print(f"Error: {e}")
 
-
         await self.__db_access_loop(db_access)
-
 
     async def create_enterprise(self):
         def db_access(db: Session):
@@ -330,12 +351,12 @@ class UpdateEvent:
                 stdout.flush()
 
             except Exception as e:
-                print(f"Failed to update user {enterprise_name} - ID: {enterprise_id} on DB")
+                print(
+                    f"Failed to update user {enterprise_name} - ID: {enterprise_id} on DB"
+                )
                 print(f"Error: {e}")
 
-
         await self.__db_access_loop(db_access)
-
 
     async def delete_enterprise(self):
         def db_access(db: Session):
@@ -350,7 +371,6 @@ class UpdateEvent:
                     print(f'Enterprise with id {self.data["id"]} not found')
 
         await self.__db_access_loop(db_access)
-
 
     async def create_user(self):
         def db_access(db: Session):
@@ -367,17 +387,20 @@ class UpdateEvent:
                     user.role_id = role.id
                     user.scope_id = scope.id
                     user.enterprise_id = enterprise.id
-                    user.created_at = datetime.datetime.fromisoformat(date_created) if date_created is not None else datetime.datetime.now()
+                    user.created_at = (
+                        datetime.datetime.fromisoformat(date_created)
+                        if date_created is not None
+                        else datetime.datetime.now()
+                    )
                     session.add(user)
 
                     session.commit()
 
             except Exception as e:
-                print('Failed to create user')
+                print("Failed to create user")
                 print(f"Error: {e}")
 
         await self.__db_access_loop(db_access)
-
 
     async def delete_user(self):
         def db_access(db: Session):
