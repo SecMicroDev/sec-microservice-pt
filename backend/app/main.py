@@ -14,17 +14,17 @@ Imports:
 """
 
 import asyncio
+
+from app.messages.event import UpdateEvent
+from app.messages.subscriber import AsyncListener
+from app.router.liveness import router as liveness_router
+from app.router.products import router as products_router
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.messages.subscriber import AsyncListener
-from app.messages.event import UpdateEvent
-
 from .db.conn import create_db
 from .db.settings import ENV
-from app.router.liveness import router as liveness_router
-from app.router.products import router as products_router
 
 
 create_db()

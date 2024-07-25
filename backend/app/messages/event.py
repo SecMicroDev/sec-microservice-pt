@@ -5,15 +5,13 @@ import json
 from sys import stdout
 from typing import Any
 
-
-from app.router.utils import EnterpriseEvents, UserEvents
-from sqlmodel import Session, select
-
 from app.db.conn import get_db
 from app.models.enterprise import Enterprise, EnterpriseUpdate
-from app.models.user import User, UserRead
 from app.models.role import BaseRole, Role
 from app.models.scope import BaseScope, DefaultScope, Scope
+from app.models.user import User, UserRead
+from app.router.utils import EnterpriseEvents, UserEvents
+from sqlmodel import Session
 
 
 class UpdateEvent:
@@ -27,6 +25,7 @@ class UpdateEvent:
         update_scope: str | None = None,
         full_user: dict[str, Any] | None = None,
     ):
+        # pylint: disable=too-many-arguments
 
         self.event = event
         self.event_scope = event_scope
@@ -113,6 +112,8 @@ class UpdateEvent:
         return False
 
     async def __db_access_loop(self, db_function_callback: Callable, retries: int = 5):
+        # pylint: disable=broad-exception-called
+
         db: Session | None = None
         err: Exception | None = None
         counter = retries
@@ -134,9 +135,9 @@ class UpdateEvent:
 
                 break
 
-            except Exception as e:
-                print("Messaging error: ", e.__str__())
-                err = e
+            except Exception as db_err:
+                print("Messaging error: ", str(db_err))
+                err = db_err
                 if db:
                     db.rollback()
                     if db.is_active:
@@ -153,7 +154,7 @@ class UpdateEvent:
                 stdout.flush()
                 raise Exception("Failed to connect to the database")
             if err:
-                print(f"Error {err.__str__()}: ", err)
+                print(f"Error {str(err)}: ", err)
                 stdout.flush()
                 raise err
 
@@ -187,6 +188,7 @@ class UpdateEvent:
 
     async def update_enterprise(self):
         def db_access(db: Session):
+            # pylint: disable=broad-exception-caught
             try:
                 print(f"Start Enterprise update: Data -- {self.data}")
                 with db as session:
@@ -210,19 +212,20 @@ class UpdateEvent:
                         print(f'Enterprise with id {self.data["id"]} not found')
 
                 stdout.flush()
-            except Exception as e:
+            except Exception as db_e:
                 print(
                     f'Failed to update enterprise {self.data["name"]} - ID: {self.data["id"]} on DB'
                 )
-                print(f"Error: {e}")
+                print(f"Error: {db_e}")
 
         await self.__db_access_loop(db_access)
 
     async def update_user(self):
         def db_access(db: Session):
+            # pylint: disable=too-many-branches,too-many-statements,broad-exception-caught
 
             name = ""
-            id = 0
+            user_id = 0
 
             try:
                 role: Role | None = None
@@ -244,13 +247,13 @@ class UpdateEvent:
 
                         if db_user is not None:
                             name = db_user.username
-                            id = db_user.id
+                            user_id = db_user.id
 
-                            print(f"Found User {name} - ID {id}")
+                            print(f"Found User {name} - ID {user_id}")
 
-                            if (
-                                user_read.scope.name != DefaultScope.ALL.value
-                                and user_read.scope.name != DefaultScope.SELLS.value
+                            if user_read.scope.name not in (
+                                DefaultScope.ALL.value,
+                                DefaultScope.SELLS.value,
                             ):
 
                                 print(
@@ -316,16 +319,16 @@ class UpdateEvent:
 
                         else:
                             print(f'User with id {self.data["id"]} not found')
-                            if (
-                                user_read.scope.name == DefaultScope.ALL.value
-                                or user_read.scope.name == DefaultScope.SELLS.value
+                            if user_read.scope.name in (
+                                DefaultScope.ALL.value,
+                                user_read.scope.name == DefaultScope.SELLS.value,
                             ):
 
                                 session.add(User(**user_read.model_dump()))
                                 session.commit()
-            except Exception as e:
-                print(f"Failed to update user {name} - ID: {id} on DB")
-                print(f"Error: {e}")
+            except Exception as db_exc:
+                print(f"Failed to update user {name} - ID: {user_id} on DB")
+                print(f"Error: {db_exc}")
 
         await self.__db_access_loop(db_access)
 

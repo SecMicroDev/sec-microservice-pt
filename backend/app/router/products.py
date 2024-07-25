@@ -1,16 +1,17 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import select, Session
+
+from app.db.conn import get_db
+from app.middlewares.auth import authenticate_user, authorize_user
 from app.models.products import (
     BaseProduct,
     ProductCreate,
-    ProductUpdate,
     ProductResponse,
+    ProductUpdate,
 )
-from app.db.conn import get_db
-from app.middlewares.auth import authenticate_user, authorize_user
 from app.models.role import DefaultRole
 from app.models.user import UserRead
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, select
 
 
 router = APIRouter(prefix="/products")
@@ -89,9 +90,7 @@ def update_product(
             DefaultRole.COLLABORATOR
         ),
         custom_checks=(
-            not any(
-                [k != "stock" for k in product.model_dump(exclude_unset=True).keys()]
-            )
+            not any(k != "stock" for k in product.model_dump(exclude_unset=True).keys())
             or current_user.role.hierarchy
             <= DefaultRole.get_default_hierarchy(DefaultRole.MANAGER.value)
         ),

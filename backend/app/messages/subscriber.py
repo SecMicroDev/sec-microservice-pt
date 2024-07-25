@@ -1,10 +1,32 @@
+"""
+This module contains the AsyncListener class which is used to asynchronously 
+listen to a message queue.
+
+Class AsyncListener:
+    This class is used to asynchronously listen to a message queue. It inherits 
+    from AsyncBroker.
+
+    Attributes:
+    - queue_name: The name of the queue to which messages will be sent.
+    - message_processor: A callable that processes the messages.
+
+    Methods:
+    - callback: Processes a message using the message_processor.
+    - iterate_queue: Iterates over the messages in the queue and processes them using 
+      the message_processor.
+    - listen: Connects to the message broker, declares the exchange and queue, 
+      binds the queue to the exchange, and starts iterating over the queue.
+"""
+
 from collections.abc import Coroutine
 from os import environ
 from typing import Callable
+
 import aio_pika
+from app.messages.async_broker import AsyncBroker
 
 
-class AsyncListener:
+class AsyncListener(AsyncBroker):
     def __init__(
         self, queue_name, processor: Callable[[str], Coroutine[None, None, None]]
     ):
@@ -22,13 +44,7 @@ class AsyncListener:
                     await self.message_processor(message.body.decode())
 
     async def listen(self, loop):
-        connection = await aio_pika.connect_robust(
-            host=environ.get("BROKER_HOST", "my-rabbit"),
-            username=environ.get("BROKER_USER", "guest"),
-            password=environ.get("BROKER_PASS", "guest"),
-            port=int(environ.get("BROKER_PORT", "5672")),
-            loop=loop,
-        )
+        connection = await self.default_connect_robust(loop)
         channel = await connection.channel()
         exchange = await channel.declare_exchange(
             environ.get("DEFAULT_EXCHANGE", "openferp"),
@@ -40,15 +56,4 @@ class AsyncListener:
         await queue.bind(exchange, routing_key=self.queue_name)
         await self.iterate_queue(queue)
 
-        # print(" [*] Waiting for messages. To exit press CTRL+C")
-        # await asyncio.Future()  # Run forever
         return connection
-
-    # def run_listener_thread(self):
-    #     asyncio.run(self.listen())
-
-
-# Example usage:
-# if __name__ == "__main__":
-#     listener = AioPikaListener(queue_name='async_queue')
-#     asyncio.run(listener.listen())

@@ -1,7 +1,9 @@
 """
 This module defines the Scope model for storing scopes in the database.
 
-The Scope model inherits from the BaseIDModel and BaseScope classes, which provide common fields and functionality.
+The Scope model inherits from the BaseIDModel and BaseScope classes, 
+which provide common fields and functionality.
+
 It represents a scope stored in the database.
 
 Attributes:
@@ -11,13 +13,12 @@ Attributes:
 """
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
-from sqlalchemy import Column, String, UniqueConstraint
-from sqlmodel import Field, Relationship, SQLModel, or_, select
-
-from sqlmodel.sql.expression import SelectOfScalar
+from typing import Any, Literal, Optional, TYPE_CHECKING, Union
 
 from app.db.base import BaseIDModel
+from sqlalchemy import Column, String, UniqueConstraint
+from sqlmodel import Field, Relationship, SQLModel, or_, select
+from sqlmodel.sql.expression import SelectOfScalar
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -82,8 +83,6 @@ class ScopeRead(SQLModel):
 class ScopeCreate(BaseScope):
     """Represents a scope creation request."""
 
-    pass
-
 
 class ScopeUpdate(SQLModel):
     """Represents a scope update request."""
@@ -118,22 +117,22 @@ class DefaultScopeSchema(SQLModel):
         dict[str, Any],
     ]:
         return {
-            DefaultScope.SELLS: dict(
-                name=DefaultScope.SELLS.value,
-                description="Sells scope from the enterprise.",
-            ),
-            DefaultScope.HUMAN_RESOURCE: dict(
-                name=DefaultScope.HUMAN_RESOURCE.value,
-                description="Human resource from the enterprise.",
-            ),
-            DefaultScope.PATRIMONIAL: dict(
-                name=DefaultScope.PATRIMONIAL.value,
-                description="Patrimonial scope from the enterprise.",
-            ),
-            DefaultScope.ALL: dict(
-                name=DefaultScope.ALL.value,
-                description="All scopes from the enterprise.",
-            ),
+            DefaultScope.SELLS: {
+                "name": DefaultScope.SELLS.value,
+                "description": "Sells scope from the enterprise.",
+            },
+            DefaultScope.HUMAN_RESOURCE: {
+                "name": DefaultScope.HUMAN_RESOURCE.value,
+                "description": "Human resource from the enterprise.",
+            },
+            DefaultScope.PATRIMONIAL: {
+                "name": DefaultScope.PATRIMONIAL.value,
+                "description": "Patrimonial scope from the enterprise.",
+            },
+            DefaultScope.ALL: {
+                "name": DefaultScope.ALL.value,
+                "description": "All scopes from the enterprise.",
+            },
         }
 
 

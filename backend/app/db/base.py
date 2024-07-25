@@ -1,5 +1,6 @@
 """
-This module contains the `BaseIDModel` class, which is a base class for models with UUID primary key.
+This module contains the `BaseIDModel` class, which is a base 
+class for models with UUID primary key.
 
 Attributes:
     uuid (Optional[UUID4]): The UUID primary key of the model.

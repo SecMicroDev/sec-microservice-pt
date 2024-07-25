@@ -2,18 +2,17 @@
 This module defines the Role model and its base class.
 """
 
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from enum import Enum
+from typing import Any, Literal, Optional, TYPE_CHECKING, Union
+
+from app.db.base import BaseIDModel
 from sqlalchemy import Column, String, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel, or_, select
 from sqlmodel.sql.expression import SelectOfScalar
 
-
-from app.db.base import BaseIDModel
-
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.enterprise import Enterprise
-from enum import Enum
 
 
 class BaseRole(SQLModel):
@@ -62,13 +61,9 @@ class Role(BaseIDModel, BaseRole, table=True):
 class RoleCreate(BaseRole):
     """Represents a role creation request."""
 
-    pass
-
 
 class RoleRead(BaseRole):
     """Represents a role read response."""
-
-    pass
 
 
 class DefaultRole(str, Enum):
@@ -102,21 +97,21 @@ class DefaultRoleSchema(SQLModel):
         dict[str, Any],
     ]:
         return {
-            DefaultRole.OWNER: dict(
-                name=DefaultRole.OWNER.value,
-                description="The owner of the enterprise.",
-                hierarchy=1,
-            ),
-            DefaultRole.COLLABORATOR: dict(
-                name=DefaultRole.COLLABORATOR.value,
-                description="A collaborator of the enterprise.",
-                hierarchy=3,
-            ),
-            DefaultRole.MANAGER: dict(
-                name=DefaultRole.MANAGER.value,
-                description="A manager of the enterprise.",
-                hierarchy=2,
-            ),
+            DefaultRole.OWNER: {
+                "name": DefaultRole.OWNER.value,
+                "description": "The owner of the enterprise.",
+                "hierarchy": 1,
+            },
+            DefaultRole.COLLABORATOR: {
+                "name": DefaultRole.COLLABORATOR.value,
+                "description": "A collaborator of the enterprise.",
+                "hierarchy": 3,
+            },
+            DefaultRole.MANAGER: {
+                "name": DefaultRole.MANAGER.value,
+                "description": "A manager of the enterprise.",
+                "hierarchy": 2,
+            },
         }
 
 
