@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import select, Session
 from app.models.products import BaseProduct, ProductCreate, ProductUpdate, ProductResponse
@@ -108,8 +109,14 @@ def update_product(
         for key, value in product.model_dump(exclude_unset=True).items():
             setattr(db_product, key, value)
 
+        db_product.last_updated_by = current_user.id
+        db_product.updated_at = datetime.now(timezone.utc)
+
+        db_session.add(db_product)
         db_session.commit()
         db_session.refresh(db_product)
+
+        print(f'Updated product: {db_product.model_dump()}')
 
         return ProductResponse(**db_product.model_dump())
 
