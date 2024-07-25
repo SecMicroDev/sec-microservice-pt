@@ -14,6 +14,7 @@ from app.main import app
 from app.middlewares.auth import authenticate_user
 from app.middlewares.send_message import get_async_message_sender_on_loop
 from app.models.enterprise import Enterprise, EnterpriseRelation
+from app.models.products import BaseProduct
 from app.models.role import DefaultRole, DefaultRoleSchema, Role, RoleRelation
 from app.models.scope import DefaultScope, DefaultScopeSchema, Scope, ScopeRelation
 from app.models.user import User, UserRead
@@ -180,12 +181,71 @@ def create_default_user(db_session: Session, enterprise_role_scope: dict[str, An
         scope_id=scope.id,
         enterprise_id=enterprise_role_scope["enterprise"].id,
     )
+
+    products: list[BaseProduct] = []
+
+    r_products: list[BaseProduct] = []
+
     db_session.add(user)
     db_session.commit()
-
     db_session.refresh(user)
 
-    return {"user": user, **enterprise_role_scope}
+    
+    for p in [
+        BaseProduct(
+            id=None,
+            name="Test Product",
+            description="A product for testing purposes",
+            enterprise_id=user.enterprise_id,
+            cost=10.0,
+            price=22.0,
+            created_by=user.id,
+            last_updated_by=None,
+            stock=10
+        ),
+        BaseProduct(
+            id=None,
+            name="Test Product 2",
+            description="A product for testing purposes 2",
+            enterprise_id=user.enterprise_id,
+            cost=8.0,
+            price=12.0,
+            created_by=user.id,
+            last_updated_by=None,
+            stock=10
+        ),
+    ]:
+        products.append(p)
+
+    for p in products:
+        db_session.add(p)
+
+    enterp = enterprise_role_scope["enterprise"]
+
+    db_session.commit()
+
+    for p in products:
+        db_session.refresh(p)
+        r_products.append(p)
+
+    for rp in r_products:
+        assert rp.id is not None
+
+    enterp.products = r_products
+    db_session.add(enterp)
+    db_session.commit()
+    db_session.refresh(user)
+    db_session.refresh(enterp)
+    enterprise_role_scope = { 
+        **enterprise_role_scope,
+        "enterprise": enterp
+    }
+
+    return {
+        "user": user,
+        "products":r_products,
+        **enterprise_role_scope
+    }
 
 
 @pytest.fixture(scope="function")
