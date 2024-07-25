@@ -3,7 +3,13 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.models.products import BaseProduct, ProductCreate, ProductUpdate, ProductResponse
+from app.models.products import (
+    BaseProduct,
+    ProductCreate,
+    ProductUpdate,
+    ProductResponse,
+)
+
 
 def test_create_product(
     test_client_authenticated_default: TestClient,
@@ -19,9 +25,9 @@ def test_create_product(
     ).model_dump()
 
     response = test_client.post(
-    "/products/",
-    json=product_data,
-)
+        "/products/",
+        json=product_data,
+    )
     assert response.status_code == status.HTTP_200_OK
 
     product_response = response.json()
@@ -58,7 +64,10 @@ def test_read_product(
     assert product_response is not None
     assert product_response["id"] == product_id
     assert product_response["name"] == create_default_user["products"][0].name
-    assert product_response["description"] == create_default_user["products"][0].description
+    assert (
+        product_response["description"]
+        == create_default_user["products"][0].description
+    )
     assert product_response["stock"] == create_default_user["products"][0].stock
 
 
@@ -71,8 +80,7 @@ def test_update_product(
 
     product_id = create_default_user["products"][0].id
     update_data = ProductUpdate(
-        name="Updated Product Name",
-        description="Updated Description"
+        name="Updated Product Name", description="Updated Description"
     ).model_dump(exclude_none=True)
 
     response = test_client.put(
@@ -109,6 +117,7 @@ def test_delete_product(
     db_product = db_session.get(BaseProduct, product_id)
     assert db_product is None
 
+
 # def test_query_products(
 #     test_client_authenticated_default: TestClient,
 #     create_default_user: dict[str, Any],
@@ -128,4 +137,3 @@ def test_delete_product(
 #         assert product_data["description"] == create_default_user["products"][i].description
 #         assert product_data["price"] == create_default_user["products"][i].price
 #         assert product_data["stock"] == create_default_user["products"][i].stock
-

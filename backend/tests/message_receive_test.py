@@ -8,13 +8,28 @@ import pytest
 import itertools
 from sqlalchemy.engine import Engine
 from app.messages.event import UpdateEvent
-from app.models.enterprise import Enterprise, EnterpriseRelation, EnterpriseWithHierarchy
+from app.models.enterprise import (
+    Enterprise,
+    EnterpriseRelation,
+    EnterpriseWithHierarchy,
+)
 from app.models.role import DefaultRole, Role, RoleRelation
 from app.models.scope import DefaultScope, Scope, ScopeRelation
 from app.models.user import User, UserRead
 from sqlmodel import SQLModel, Session, StaticPool, create_engine, select
 
-from app.router.utils import EnterpriseCreateEvent, EnterpriseDeleteEvent, EnterpriseDeleteWithId, EnterpriseUpdateEvent, EnterpriseUpdateWithId, UserCreateEvent, UserDeleteEvent, UserDeleteWithId, UserUpdateEvent, UserUpdateWithId
+from app.router.utils import (
+    EnterpriseCreateEvent,
+    EnterpriseDeleteEvent,
+    EnterpriseDeleteWithId,
+    EnterpriseUpdateEvent,
+    EnterpriseUpdateWithId,
+    UserCreateEvent,
+    UserDeleteEvent,
+    UserDeleteWithId,
+    UserUpdateEvent,
+    UserUpdateWithId,
+)
 
 
 @pytest.fixture(scope="function")
@@ -36,9 +51,7 @@ def setup_db() -> Engine:
 
 def setup_db_defaults(local_db_session: Session) -> tuple[User, Enterprise]:
     enterprise = Enterprise(
-        id=None,
-        name="TestEnterprise",
-        accountable_email="testenterprise@test.mail.com"
+        id=None, name="TestEnterprise", accountable_email="testenterprise@test.mail.com"
     )
 
     local_db_session.add(enterprise)
@@ -83,22 +96,24 @@ def setup_db_defaults(local_db_session: Session) -> tuple[User, Enterprise]:
             name=DefaultRole.COLLABORATOR.value,
             description="Test Collaborator Description",
             hierarchy=DefaultRole.get_default_hierarchy(DefaultRole.COLLABORATOR.value),
-            enterprise_id=enterprise.id
-        )
+            enterprise_id=enterprise.id,
+        ),
     ]
 
     enterprise.scopes = [
-        scope, scope_all, Scope(
+        scope,
+        scope_all,
+        Scope(
             id=None,
             name=DefaultScope.PATRIMONIAL.value,
             description="Test Role Description",
-            enterprise_id=enterprise.id
+            enterprise_id=enterprise.id,
         ),
         Scope(
             id=None,
             name=DefaultScope.HUMAN_RESOURCE.value,
             description="Test Role Description",
-            enterprise_id=enterprise.id
+            enterprise_id=enterprise.id,
         ),
     ]
 
@@ -145,26 +160,20 @@ def get_id() -> int:
 
 def map_enterprise_roles_scope(r: Role | Scope):
     r.id = get_id()
-    r.enterprise_id = r.enterprise_id+1
+    r.enterprise_id = r.enterprise_id + 1
     return r
 
 
 def map_enterprise_relation(e: Enterprise):
-    return EnterpriseRelation(
-        **e.model_dump()
-    )
+    return EnterpriseRelation(**e.model_dump())
 
 
 def map_role_relation(r: Role):
-    return RoleRelation(
-        **r.model_dump()
-    )
+    return RoleRelation(**r.model_dump())
 
 
 def map_scope_relation(s: Scope):
-    return ScopeRelation(
-        **s.model_dump()
-    )
+    return ScopeRelation(**s.model_dump())
 
 
 @pytest.mark.asyncio
@@ -178,22 +187,28 @@ async def test_create_user_event(mock_get: Mock, setup_db: Engine):
 
         mock_get.return_value = gen_db(local_db_session)
 
-        message_dict: dict[str, Any] = { 
-            **json.loads(UserCreateEvent(
-                event_scope=DefaultScope.ALL.value,
-                data=UserRead(
-                    id=5,
-                    username="testuser2",
-                    email="testemail2@test.mail.com",
-                    full_name="Test User 2",
-                    role=RoleRelation(id=1, name=DefaultRole.OWNER.value, hierarchy=1),
-                    scope=ScopeRelation(id=1, name=DefaultScope.ALL.value),
-                    enterprise=EnterpriseRelation(
-                        id=1, name="TestEnterprise", accountable_email="testenterprisemail@test.com"
+        message_dict: dict[str, Any] = {
+            **json.loads(
+                UserCreateEvent(
+                    event_scope=DefaultScope.ALL.value,
+                    data=UserRead(
+                        id=5,
+                        username="testuser2",
+                        email="testemail2@test.mail.com",
+                        full_name="Test User 2",
+                        role=RoleRelation(
+                            id=1, name=DefaultRole.OWNER.value, hierarchy=1
+                        ),
+                        scope=ScopeRelation(id=1, name=DefaultScope.ALL.value),
+                        enterprise=EnterpriseRelation(
+                            id=1,
+                            name="TestEnterprise",
+                            accountable_email="testenterprisemail@test.com",
+                        ),
+                        created_at=datetime.datetime.now(),
                     ),
-                    created_at=datetime.datetime.now(),
-                )
-            ).model_dump_json()),
+                ).model_dump_json()
+            ),
             "start_date": datetime.datetime.now().isoformat(),
             "origin": "rh_service",
         }
@@ -207,7 +222,9 @@ async def test_create_user_event(mock_get: Mock, setup_db: Engine):
         mock_get.assert_called_once()
 
         # Assert
-        user = local_db_session.exec(select(User).where(User.username == "testuser2")).first()
+        user = local_db_session.exec(
+            select(User).where(User.username == "testuser2")
+        ).first()
 
         with local_db_session:
             assert user is not None
@@ -249,35 +266,37 @@ async def test_update_user_event(mock_get: Mock, setup_db: Engine):
     assert saved_user.enterprise.name is not None
 
     # Arrange
-    message_dict: dict[str, Any] = { 
-        **json.loads(UserUpdateEvent(
-            event_scope=DefaultScope.SELLS.value,
-            update_scope=DefaultScope.PATRIMONIAL.value,
-            user=UserRead(
-                **saved_user.model_dump(),
-                role=RoleRelation(
-                    id=saved_user.role.id,
-                    name=saved_user.role.name,
-                    hierarchy=saved_user.role.hierarchy,
+    message_dict: dict[str, Any] = {
+        **json.loads(
+            UserUpdateEvent(
+                event_scope=DefaultScope.SELLS.value,
+                update_scope=DefaultScope.PATRIMONIAL.value,
+                user=UserRead(
+                    **saved_user.model_dump(),
+                    role=RoleRelation(
+                        id=saved_user.role.id,
+                        name=saved_user.role.name,
+                        hierarchy=saved_user.role.hierarchy,
+                    ),
+                    scope=ScopeRelation(
+                        id=enterprise.scopes[0].id,
+                        name=enterprise.scopes[0].name,
+                    ),
+                    enterprise=EnterpriseRelation(
+                        id=saved_user.enterprise_id,
+                        name=saved_user.enterprise.name,
+                        accountable_email=enterprise.accountable_email,
+                    )
                 ),
-                scope=ScopeRelation(
-                    id=enterprise.scopes[0].id,
-                    name=enterprise.scopes[0].name,
+                data=UserUpdateWithId(
+                    id=saved_user.id,
+                    enterprise_id=saved_user.enterprise_id,
+                    username="updateduser",
+                    email="updatedemail@test.mail.com",
+                    scope_id=enterprise.scopes[2].id,
                 ),
-                enterprise=EnterpriseRelation(
-                    id=saved_user.enterprise_id,
-                    name=saved_user.enterprise.name,
-                    accountable_email=enterprise.accountable_email,
-                )
-            ),
-            data=UserUpdateWithId(
-                id=saved_user.id,
-                enterprise_id=saved_user.enterprise_id,
-                username="updateduser",
-                email="updatedemail@test.mail.com",
-                scope_id=enterprise.scopes[2].id,
-            )
-        ).model_dump_json()),
+            ).model_dump_json()
+        ),
         "start_date": datetime.datetime.now().isoformat(),
         "origin": "rh_service",
     }
@@ -315,11 +334,11 @@ async def test_update_user_event(mock_get: Mock, setup_db: Engine):
 
 @pytest.mark.asyncio
 @patch("app.messages.event.get_db")
-async def test_delete_user_event(mock_get: Mock, setup_db: Engine): 
+async def test_delete_user_event(mock_get: Mock, setup_db: Engine):
     connection = setup_db.connect()
     transaction = connection.begin()
     local_db_session = Session(autocommit=False, autoflush=False, bind=setup_db)
-    saved_user, _  = setup_db_defaults(local_db_session)
+    saved_user, _ = setup_db_defaults(local_db_session)
 
     assert saved_user is not None
     assert saved_user.id is not None
@@ -328,14 +347,16 @@ async def test_delete_user_event(mock_get: Mock, setup_db: Engine):
 
     assert saved_user.enterprise_id
 
-    message_dict = { 
-        **json.loads(UserDeleteEvent(
-            event_scope=DefaultScope.PATRIMONIAL.value,
-            data=UserDeleteWithId(
-                id=saved_user.id,
-                enterprise_id=saved_user.enterprise_id,
-            )
-        ).model_dump_json()),
+    message_dict = {
+        **json.loads(
+            UserDeleteEvent(
+                event_scope=DefaultScope.PATRIMONIAL.value,
+                data=UserDeleteWithId(
+                    id=saved_user.id,
+                    enterprise_id=saved_user.enterprise_id,
+                ),
+            ).model_dump_json()
+        ),
         "start_date": datetime.datetime.now().isoformat(),
         "origin": "rh_service",
     }
@@ -353,7 +374,7 @@ async def test_delete_user_event(mock_get: Mock, setup_db: Engine):
     new_session = Session(autocommit=False, autoflush=False, bind=setup_db)
 
     with new_session:
-        user = new_session.get(User,saved_user.id)
+        user = new_session.get(User, saved_user.id)
         assert user is None
 
     transaction.rollback()
@@ -390,9 +411,9 @@ async def test_create_enterprise_event(mock_get: Mock, setup_db: Engine):
             name="Test Role",
             description="New Test Role Description",
             hierarchy=2,
-            enterprise_id=enterprise.id+1,
+            enterprise_id=enterprise.id + 1,
         ),
-        *map(map_enterprise_roles_scope, enterprise.roles)
+        *map(map_enterprise_roles_scope, enterprise.roles),
     ]
 
     new_scopes = [
@@ -400,26 +421,28 @@ async def test_create_enterprise_event(mock_get: Mock, setup_db: Engine):
             id=get_id(),
             name="Test Scope",
             description="New Test Scope Description",
-            enterprise_id=enterprise.id+1,
+            enterprise_id=enterprise.id + 1,
         ),
-        *map(map_enterprise_roles_scope, enterprise.scopes)
+        *map(map_enterprise_roles_scope, enterprise.scopes),
     ]
 
-    message_dict = { 
-        **json.loads(EnterpriseCreateEvent(
-            event_scope=DefaultScope.ALL.value,
-            data=EnterpriseWithHierarchy(
-                id=enterprise.id+1,
-                name="NewEnterprise",
-                accountable_email="newenterprise@test.mail.com",
-                roles=list(map(map_role_relation, new_roles)),
-                scopes=list(map(map_scope_relation, new_scopes)),
-            )
-        ).model_dump_json()),
+    message_dict = {
+        **json.loads(
+            EnterpriseCreateEvent(
+                event_scope=DefaultScope.ALL.value,
+                data=EnterpriseWithHierarchy(
+                    id=enterprise.id + 1,
+                    name="NewEnterprise",
+                    accountable_email="newenterprise@test.mail.com",
+                    roles=list(map(map_role_relation, new_roles)),
+                    scopes=list(map(map_scope_relation, new_scopes)),
+                ),
+            ).model_dump_json()
+        ),
         "start_date": datetime.datetime.now().isoformat(),
         "origin": "rh_service",
     }
-    
+
     # Arrange
     message = json.dumps(message_dict)
 
@@ -434,7 +457,9 @@ async def test_create_enterprise_event(mock_get: Mock, setup_db: Engine):
     new_session = Session(autocommit=False, autoflush=False, bind=setup_db)
 
     with new_session:
-        enterprise = new_session.exec(select(Enterprise).where(Enterprise.name == "NewEnterprise")).first()
+        enterprise = new_session.exec(
+            select(Enterprise).where(Enterprise.name == "NewEnterprise")
+        ).first()
 
         assert enterprise is not None
         assert enterprise.name == "NewEnterprise"
@@ -463,15 +488,17 @@ async def test_update_enterprise_event(mock_get: Mock, setup_db: Engine):
     assert saved_user.id is not None
     assert enterprise.id is not None
 
-    message_dict = { 
-        **json.loads(EnterpriseUpdateEvent(
-            event_scope=DefaultScope.ALL.value,
-            data=EnterpriseUpdateWithId(
-                id=enterprise.id,
-                name="UpdatedEnterprise",
-                accountable_email="updatedenterprise@test.mail.com"
-            )
-        ).model_dump_json(exclude_none=True)),
+    message_dict = {
+        **json.loads(
+            EnterpriseUpdateEvent(
+                event_scope=DefaultScope.ALL.value,
+                data=EnterpriseUpdateWithId(
+                    id=enterprise.id,
+                    name="UpdatedEnterprise",
+                    accountable_email="updatedenterprise@test.mail.com",
+                ),
+            ).model_dump_json(exclude_none=True)
+        ),
         "start_date": datetime.datetime.now().isoformat(),
         "origin": "rh_service",
     }
@@ -492,7 +519,9 @@ async def test_update_enterprise_event(mock_get: Mock, setup_db: Engine):
     new_session = Session(autocommit=False, autoflush=False, bind=setup_db)
 
     with new_session:
-        updated_enterprise = new_session.exec(select(Enterprise).where(Enterprise.id == enterprise.id)).first()
+        updated_enterprise = new_session.exec(
+            select(Enterprise).where(Enterprise.id == enterprise.id)
+        ).first()
         assert updated_enterprise is not None
         assert updated_enterprise.name == "UpdatedEnterprise"
         assert updated_enterprise.accountable_email == "updatedenterprise@test.mail.com"
@@ -522,13 +551,13 @@ async def test_delete_enterprise_event(mock_get: Mock, setup_db: Engine):
     assert saved_user.id is not None
     assert enterprise.id is not None
 
-    message_dict = { 
-        **json.loads(EnterpriseDeleteEvent(
-            event_scope=DefaultScope.ALL.value,
-            data=EnterpriseDeleteWithId(
-                id=enterprise.id
-            )
-        ).model_dump_json()),
+    message_dict = {
+        **json.loads(
+            EnterpriseDeleteEvent(
+                event_scope=DefaultScope.ALL.value,
+                data=EnterpriseDeleteWithId(id=enterprise.id),
+            ).model_dump_json()
+        ),
         "start_date": datetime.datetime.now().isoformat(),
         "origin": "rh_service",
     }
@@ -547,7 +576,9 @@ async def test_delete_enterprise_event(mock_get: Mock, setup_db: Engine):
     new_session = Session(autocommit=False, autoflush=False, bind=setup_db)
 
     with new_session:
-        deleted_enterprise = new_session.exec(select(Enterprise).where(Enterprise.id == enterprise.id)).first()
+        deleted_enterprise = new_session.exec(
+            select(Enterprise).where(Enterprise.id == enterprise.id)
+        ).first()
         assert deleted_enterprise is None
 
     transaction.rollback()

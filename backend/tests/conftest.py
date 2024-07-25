@@ -190,7 +190,6 @@ def create_default_user(db_session: Session, enterprise_role_scope: dict[str, An
     db_session.commit()
     db_session.refresh(user)
 
-    
     for p in [
         BaseProduct(
             id=None,
@@ -201,7 +200,7 @@ def create_default_user(db_session: Session, enterprise_role_scope: dict[str, An
             price=22.0,
             created_by=user.id,
             last_updated_by=None,
-            stock=10
+            stock=10,
         ),
         BaseProduct(
             id=None,
@@ -212,7 +211,7 @@ def create_default_user(db_session: Session, enterprise_role_scope: dict[str, An
             price=12.0,
             created_by=user.id,
             last_updated_by=None,
-            stock=10
+            stock=10,
         ),
     ]:
         products.append(p)
@@ -236,16 +235,9 @@ def create_default_user(db_session: Session, enterprise_role_scope: dict[str, An
     db_session.commit()
     db_session.refresh(user)
     db_session.refresh(enterp)
-    enterprise_role_scope = { 
-        **enterprise_role_scope,
-        "enterprise": enterp
-    }
+    enterprise_role_scope = {**enterprise_role_scope, "enterprise": enterp}
 
-    return {
-        "user": user,
-        "products":r_products,
-        **enterprise_role_scope
-    }
+    return {"user": user, "products": r_products, **enterprise_role_scope}
 
 
 @pytest.fixture(scope="function")
