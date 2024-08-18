@@ -54,8 +54,15 @@ app.router.lifespan_context = listener_span
 
 # CORS configuration
 origins = [
-    "http://local.adrianlopes-swe.com.br",  # Adjust this as needed
-    "http://app.adrianlopes-swe.com.br",  # Adjust this as needed
+    "http://local.adrianlopes-swe.com.br",
+    "http://app.adrianlopes-swe.com.br",
+    "https://apirh.adrianlopes-swe.com.br",
+    "https://apisell.adrianlopes-swe.com.br",
+    "https://apipt.adrianlopes-swe.com.br",
+    "https://apirh.adrianlopes-swe.com.br:32747",
+    "https://apisell.adrianlopes-swe.com.br:32747",
+    "https://apipt.adrianlopes-swe.com.br:32747",
+    "https://openferp.budibase.app"
 ]
 
 if ENV == "test":
