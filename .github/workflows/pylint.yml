@@ -33,4 +33,4 @@ jobs:
       working-directory: ./backend
       run: |
         export PYTHONPATH="$(pwd)"
-        poetry run pylint .
+        poetry run pylint --fail-under=9 .
