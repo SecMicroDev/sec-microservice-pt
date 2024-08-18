@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   api-run:
     container_name: pt-api-run
@@ -14,7 +12,7 @@ services:
       DB_USER: ${DB_USER:-user}
       DB_HOST: ${DB_HOST:-postgres-test}
       DB_PASSWORD: ${DB_PASSWORD:-password}
-      API_ENV: ${API_ENV:-test-slave}
+      API_ENV: ${API_ENV:-test}
       JWT_ACCESS_EXPIRE_MINUTES: ${JWT_ACCESS_EXPIRE_MINUTES:-30} 
       JWT_REFRESH_EXPIRE_MINUTES: ${JWT_REFRESH_EXPIRE_MINUTES:-2880}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-RS256}
@@ -90,12 +88,12 @@ services:
         -----END PRIVATE KEY-----
 
       JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-testunsaferefresh}
-    networks:
-    - sec-microservice-rh_service
-    - sec-microservice-sells_db
+    # networks:
+    # - sec-microservice-rh_service
+    # - sec-microservice-sells_db
     # - db
-    # depends_on:
-    # - postgres-test
+    depends_on:
+    - postgres-test
     volumes:
       - ./backend/:/backend/
   api-test:
@@ -110,9 +108,9 @@ services:
     - .coverage/:/backend/code-coverage/
     - ./backend/tests/:/backend/tests
     # - ./.venv:/opt/venv/
-    networks:
-    - sec-microservice-rh_service
-    - sec-microservice-sells_db
+    # networks:
+    # - sec-microservice-rh_service
+    # - sec-microservice-sells_db
     # - db
     environment:
       DB_NAME: ${DB_NAME:-testdb}
@@ -197,18 +195,18 @@ services:
       JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-testunsaferefresh}
     # depends_on:
     # - postgres-test
-  # postgres-test:
-  #   container_name: pt-postgres-test
-  #   image: postgres:16-alpine
-  #   # volumes:
-  #   # - pgdata:/var/lib/postgresql/data
-  #   environment:
-  #     POSTGRES_DB: ${DB_NAME:-testdb}
-  #     POSTGRES_USER: ${DB_USER:-user}
-  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+  postgres-test:
+    container_name: pt-postgres-test
+    image: postgres:16-alpine
+    # volumes:
+    # - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_NAME:-testdb}
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
 
-  #   # ports:
-  #   # - 5432:5432
+    # ports:
+    # - 5432:5432
 
   #   networks:
   #   - db 
@@ -226,8 +224,8 @@ services:
 
 # volumes:
   # pgdata:
-networks:
-  sec-microservice-rh_service:
-    external: true
-  sec-microservice-sells_db:
-    external: true
+# networks:
+  # sec-microservice-rh_service:
+    # external: true
+  # sec-microservice-sells_db:
+    # external: true

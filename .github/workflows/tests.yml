@@ -12,21 +12,21 @@ jobs:
       checks: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 #v4.1.7    - uses: actions/checkout@v3
       with:
         ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
         fetch-depth: 0  # a full history is required for pull request analysis
 
     - name: Build test container
       run: |
-        docker compose up -d --build postgres-test api-test && docker compose wait api-test
+                docker compose up -d --build api-test postgres-test && docker compose wait api-test
 
     - run: echo "Tests returned exit code $? (Passed)"
     - name: Ending container
       run: docker compose down
 
     - name: codacy-coverage-reporter
-      uses: codacy/codacy-coverage-reporter-action@v1
+      uses: codacy/codacy-coverage-reporter-action@89d6c85cfafaec52c72b6c5e8b2878d33104c699 # v1.3.0      uses: codacy/codacy-coverage-reporter-action@v1
       if: github.event.pull_request.merged == false
       with:
         project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
@@ -36,7 +36,7 @@ jobs:
         # or a comma-separated list for multiple reports
         # coverage-reports: <PATH_TO_REPORT>, <PATH_TO_REPORT>
     - name: Run Codacy Analysis CLI
-      uses: codacy/codacy-analysis-cli-action@master
+      uses: codacy/codacy-analysis-cli-action@97bf5df3c09e75f5bcd72695998f96ebd701846e #v4.4.5      uses: codacy/codacy-analysis-cli-action@master
       if: github.event.pull_request.merged == false
       with:
         output: results.sarif
@@ -46,13 +46,17 @@ jobs:
         # Force 0 exit code to allow SARIF file generation
         # This will hand over control about PR rejection to the GitHub side
         max-allowed-issues: 2147483647
+
+
+    - name: Filter repeated runs on SARIF file
+      run: jq '.runs |= unique_by({tool, invocations})' results.sarif > codacy.sarif
       
     # Upload the SARIF file generated in the previous step
     - name: Upload SARIF results file
-      uses: github/codeql-action/upload-sarif@main
+      uses: github/codeql-action/upload-sarif@064a406de026ea27990a5b507b56911401ca2f95 #v2.18.0      uses: github/codeql-action/upload-sarif@main
       if: github.event.pull_request.merged == false
       with:
-        sarif_file: results.sarif
+        sarif_file: codacy.sarif
 
     # - name: Copying source code files
     #   run: |

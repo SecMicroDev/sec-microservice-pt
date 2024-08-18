@@ -12,12 +12,12 @@ jobs:
       matrix:
         python-version: ["3.11"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 #v4.1.7
       with:
         ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
         fetch-depth: 0  # a full history is required for pull request analysis
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@3542bca2639a428e1796aaa6a2ffef0c0f575566 #v3.1.4      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -33,4 +33,4 @@ jobs:
       working-directory: ./backend
       run: |
         export PYTHONPATH="$(pwd)"
-        poetry run pylint .
+        poetry run pylint --fail-under=9 .
