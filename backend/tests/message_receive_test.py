@@ -403,8 +403,6 @@ async def test_create_enterprise_event(mock_get: Mock, setup_db: Engine):
     assert enterprise.roles is not None
     assert enterprise.scopes is not None
 
-    global count
-
     new_roles = [
         Role(
             id=get_id(),
