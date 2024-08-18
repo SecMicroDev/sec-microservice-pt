@@ -88,9 +88,9 @@ services:
         -----END PRIVATE KEY-----
 
       JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-testunsaferefresh}
-    networks:
-    - sec-microservice-rh_service
-    - sec-microservice-sells_db
+    # networks:
+    # - sec-microservice-rh_service
+    # - sec-microservice-sells_db
     # - db
     # depends_on:
     # - postgres-test
@@ -108,9 +108,9 @@ services:
     - .coverage/:/backend/code-coverage/
     - ./backend/tests/:/backend/tests
     # - ./.venv:/opt/venv/
-    networks:
-    - sec-microservice-rh_service
-    - sec-microservice-sells_db
+    # networks:
+    # - sec-microservice-rh_service
+    # - sec-microservice-sells_db
     # - db
     environment:
       DB_NAME: ${DB_NAME:-testdb}
@@ -224,8 +224,8 @@ services:
 
 # volumes:
   # pgdata:
-networks:
-  sec-microservice-rh_service:
-    external: true
-  sec-microservice-sells_db:
-    external: true
+# networks:
+  # sec-microservice-rh_service:
+    # external: true
+  # sec-microservice-sells_db:
+    # external: true
