@@ -19,7 +19,7 @@ jobs:
 
     - name: Build test container
       run: |
-                docker compose up -d --build api-test && docker compose wait api-test
+                docker compose up -d --build api-test postgres-test && docker compose wait api-test
 
     - run: echo "Tests returned exit code $? (Passed)"
     - name: Ending container
