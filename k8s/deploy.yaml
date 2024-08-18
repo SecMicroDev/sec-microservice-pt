@@ -34,6 +34,9 @@ spec:
         image: swamptg/sec-microservice-pt:latest
         imagePullPolicy: Always
         command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--reload"]
+        envFrom:
+        - secretRef:
+            name: tcc-micro-secret
         env:
         - name: DB_NAME
           valueFrom:
@@ -46,14 +49,38 @@ spec:
               name: tcc-micro-secret
               key: PT_DB_USER
         - name: DB_HOST
-          value: '10.96.254.21' 
+          valueFrom:
+            secretKeyRef:
+              name: tcc-micro-secret
+              key: PT_DB_HOST
+
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: tcc-micro-secret
               key: PT_DB_PASSWORD
-        - name: API_ENV 
-          value: dev
+        - name: BROKER_HOST
+          valueFrom:
+            secretKeyRef:
+              name:  rabbit-exchange-secret
+              key: BROKER_HOST
+        - name: BROKER_PASS
+          valueFrom:
+            secretKeyRef:
+              name:  rabbit-exchange-secret
+              key: BROKER_PASS
+        - name: BROKER_PORT
+          valueFrom:
+            secretKeyRef:
+              name:  rabbit-exchange-secret
+              key: BROKER_PORT
+        - name: BROKER_USER
+          valueFrom:
+            secretKeyRef:
+              name:  rabbit-exchange-secret
+              key: BROKER_USER
+        # - name: API_ENV 
+        #   value: dev
         ports:
         - name: http-rh
           containerPort: 80
@@ -63,17 +90,16 @@ spec:
             memory: '50Mi'
           limits:
             cpu: '300m'
-            memory: '200Mi'
+            memory: '300Mi'
         livenessProbe:
-          initialDelaySeconds: 1
-          periodSeconds: 2
-          timeoutSeconds: 1
-          successThreshold: 1
-          failureThreshold: 1
+          initialDelaySeconds: 120
+          periodSeconds: 120
+          timeoutSeconds: 120
+          failureThreshold: 2
           httpGet:
             host:
             scheme: HTTP
-            path: /check
+            path: /check/
             httpHeaders:
               - name: Host
                 value: localhost
@@ -93,4 +119,4 @@ spec:
   ports:
   - protocol: TCP
     port: 80
-    targetPort: 8050
+    targetPort: 80

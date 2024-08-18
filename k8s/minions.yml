@@ -5,17 +5,18 @@ metadata:
   namespace: tcc
   annotations:
     nginx.org/mergeable-ingress-type: "minion"
-    nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    # nginx.ingress.kubernetes.io/rewrite-target: "/$2"
 spec:
   ingressClassName: nginx
   rules:
-  - host: local.adrianlopes-swe.com.br
+  - host: apipt.adrianlopes-swe.com.br
     http:
       paths:
-      - path: /api/v1/pt(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /
+        pathType: Prefix
         backend:
           service:
             name: ptservice-dev
             port:
-              number: 8050
+              number: 80

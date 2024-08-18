@@ -7,9 +7,10 @@ metadata:
     type: local
     app: tcc-apps
 spec:
-  storageClassName: standard
+  storageClassName: nfs-client
+  volumeMode: Filesystem
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   resources:
     requests:
-      storage: 2Gi
+      storage: 3Gi
