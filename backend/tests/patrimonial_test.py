@@ -1,14 +1,10 @@
 from typing import Any
+
 from fastapi import status
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
-from app.models.products import (
-    BaseProduct,
-    ProductCreate,
-    ProductUpdate,
-    ProductResponse,
-)
+from app.models.products import BaseProduct, ProductCreate, ProductUpdate
 
 
 def test_create_product(

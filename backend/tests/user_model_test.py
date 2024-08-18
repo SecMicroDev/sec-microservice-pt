@@ -79,15 +79,16 @@ def test_create_user(
     populate_data: Union[dict[Literal["enterprise"], Enterprise], dict[str, Any]],
 ):
     assert "roles_id" in populate_data
-    assert type(populate_data["roles_id"]) == list
+    assert isinstance(populate_data["roles_id"], list)
 
     assert "scopes_id" in populate_data
-    assert type(populate_data["scopes_id"]) == list
+    assert isinstance(populate_data["scopes_id"], list)
 
     role_id: int = populate_data["roles_id"][0]
     scope_id: int = populate_data["scopes_id"][0]
     # Test creating a user
     user = User(
+        id=None,
         username="testuser",
         email="test@example.com",
         full_name="Test User",

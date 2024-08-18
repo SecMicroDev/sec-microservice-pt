@@ -49,8 +49,6 @@ class Enterprise(BaseIDModel, BaseEnterprise, table=True):
 class EnterpriseRelation(BaseIDModel, BaseEnterprise):
     """Represents an enterprise relation."""
 
-    pass
-
 
 class EnterpriseWithHierarchy(EnterpriseRelation):
     roles: list["RoleRelation"]

@@ -1,15 +1,16 @@
+import base64
 from datetime import datetime, timedelta
 from typing import Any, Union
+
 import jwt
 from jwt import ExpiredSignatureError
-import app.auth.settings as st
-from app.auth.jwt_utils import DEFAULT_OPTIONS, decode_jwt_token
-
-import base64
 import pytest
 
+from app.auth.jwt_utils import DEFAULT_OPTIONS, decode_jwt_token
+import app.auth.settings as st
 
-DEFAULT_DOMAIN_KEYS = ["user", "role" "id"]
+
+DEFAULT_DOMAIN_KEYS = ["user", "role", "id"]
 DEFAULT_JWT_KEYS = ["exp", "iss", "iat", "sub"]
 
 
@@ -169,5 +170,5 @@ def test_expire_raises_exception():
 
     with pytest.raises(ExpiredSignatureError) as error_context:
         decode_jwt_token(hashed)
-        assert error_context != None
+        assert error_context is not None
         print(error_context)

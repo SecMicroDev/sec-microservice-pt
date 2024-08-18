@@ -1,12 +1,14 @@
 from collections.abc import Generator
 import datetime
+import itertools
 import json
 from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
-import itertools
 from sqlalchemy.engine import Engine
+from sqlmodel import SQLModel, Session, StaticPool, create_engine, select
+
 from app.messages.event import UpdateEvent
 from app.models.enterprise import (
     Enterprise,
@@ -16,8 +18,6 @@ from app.models.enterprise import (
 from app.models.role import DefaultRole, Role, RoleRelation
 from app.models.scope import DefaultScope, Scope, ScopeRelation
 from app.models.user import User, UserRead
-from sqlmodel import SQLModel, Session, StaticPool, create_engine, select
-
 from app.router.utils import (
     EnterpriseCreateEvent,
     EnterpriseDeleteEvent,

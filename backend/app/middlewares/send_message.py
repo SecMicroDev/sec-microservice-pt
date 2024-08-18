@@ -7,9 +7,9 @@ The middleware defined here can be used to send messages to other parts of the a
 import asyncio
 from collections.abc import Coroutine
 import threading
+from typing import Any, Callable
 
 from app.messages.client import AsyncSender, SyncSender
-from typing import Any, Callable
 
 
 def run_sender(sender: SyncSender, message):
