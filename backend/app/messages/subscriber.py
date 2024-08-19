@@ -52,7 +52,7 @@ class AsyncListener(AsyncBroker):
             durable=True,
         )
 
-        queue = await channel.declare_queue("rhevent/rh", durable=True)
+        queue = await channel.declare_queue("pt_events/rh", durable=True)
         await queue.bind(exchange, routing_key=self.queue_name)
         await self.iterate_queue(queue)
 

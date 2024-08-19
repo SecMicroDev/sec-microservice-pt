@@ -31,7 +31,7 @@ create_db()
 
 
 external_update_listener = AsyncListener(
-    "external.rh_event", UpdateEvent.process_message
+    "rh_event.pt", UpdateEvent.process_message
 )
 
 
