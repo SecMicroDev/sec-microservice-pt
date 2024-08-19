@@ -20,7 +20,7 @@ spec:
           - 'sh'
           - '-c'
           - |
-            until nslookup $DB_HOST; do \
+            until nslookup postgres-service-spt-dev.tcc.svc.cluster.local; do \
             echo waiting for Postgres; sleep 2; \
             done
         env:
