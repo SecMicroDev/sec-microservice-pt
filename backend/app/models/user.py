@@ -141,7 +141,6 @@ class UserCreate(BaseUser):
     """Represents a user creation request."""
 
     password: str
-    enterprise_id: int
     role_id: Optional[int] = None
     scope_id: Optional[int] = None
     role_name: Optional[str] = None
